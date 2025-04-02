@@ -120,41 +120,13 @@ ambiguity_error_types = {
 ######################################
 # 准备本题基础素材与内容
 ######################################
-def extract_senteces(material_list, n=None):
-    """ 从材料里抽取合适用于命题的句子 """
-    # 随机选择n个材料（如果n指定且有效）
-    if n and 0 < n <= len(material_list):
-        selected_materials = random.sample(material_list, n)
-    else:
-        selected_materials = material_list
-    
-    dict_sents = {10: [], 20: [], 30: []}
-    
-    for material in selected_materials:  # 遍历随机筛选后的材料
-        text = material.get('text', '').replace('\n', '').strip()
-        material_for_split = re.sub(r"[？！。]", lambda m: m.group() + "###", text)
-        
-        for sent in material_for_split.split("###"):
-            sent_len = len(re.findall(r'[\u4e00-\u9fa5]', sent))
-            
-            if sent_len <= 10:
-                continue
-
-            if sent_len <= 15:
-                dict_sents[10].append(sent)
-            elif sent_len <= 25:
-                dict_sents[20].append(sent)
-            elif sent_len <= 30:
-                dict_sents[30].append(sent)
-    
-    return dict_sents
 
 
 def make_mistake_errors(dict_sents):
     """ 为句子创造合适的病句，从不同的类型里选择。任务：病句/歧义句 """
     
-    dict_sents_confuse = {"10": [], "20": [], "30": []}
-    dict_sents_mistake = {"10": [], "20": [], "30": []}
+    dict_sents_confuse = {"30": [], "40": [], "50": []}
+    dict_sents_mistake = {"30": [], "40": [], "50": []}
     
     for length in dict_sents:
         for sent in dict_sents[length]:
@@ -184,9 +156,12 @@ def make_mistake_errors(dict_sents):
 {error_type}
 
 要求：
-1. 病句必须体现出该类型的问题；
-2. 只对必要部分进行改写，保持整体句子长度相近；
-3. 严禁添加任何解释说明，只输出结果。
+1. 改写后的句子必须体现出该类型的问题，错误应自然、隐蔽，不得生硬或低级；
+2. 保持整体句子长度与原句相近；
+3. 病句应具备真实语境中的迷惑性，类似高考语文病句判断题的错误；
+4. 请避免出现明显的语法错误或刻意堆砌冗余成分；
+5. 进行语感审读确保错误隐蔽性；
+6. 仅输出改写结果，格式如下
 
 输出格式：
 错误类型：XXX
@@ -220,21 +195,24 @@ def make_mistake_errors(dict_sents):
                 ambiguity_type = random.choice(list(ambiguity_error_types["歧义句"].keys()))
 
                 prompt = f"""
-你是一名语文教师，请将以下句子改写为一个歧义句，歧义类型必须是：{ambiguity_type}。
+你是一位专业的语文教师，请将下方句子改写为一个包含歧义的句子，要求体现指定的歧义类型。
 
-原句：
+原句：  
 {sent}
 
+指定歧义类型：  
+{ambiguity_type}
 
-要求：
-1. 改写后的句子必须体现该类型歧义；
-2. 保持长度相近，仅调整必要部分；
-3. 严禁添加解释，只输出结果。
+请遵循以下要求进行改写：  
+1. 改写句必须体现该类型歧义，歧义需自然真实，不可生硬或低级；  
+2. 改写后的句子整体长度应与原句相近；  
+3. 歧义应具有一定的隐蔽性，类似考试或真实语言环境中容易误解的表达，而非明显语病或口语化错误；  
+4. 不要添加任何解释说明，仅输出结果；
+5. 进行语感审读确保错误隐蔽性
+5. 输出格式如下：
 
-输出格式：
-歧义类型：XXX
-改写句：YYY
-"""
+歧义类型：XXX  
+改写句：YYY"""
 
                 response = client.chat.completions.create(
                     model=MODEL_ID,
@@ -269,9 +247,9 @@ def save_results(data, filename):
 
 
 if __name__ == '__main__':
-    with open("句子.json", "r", encoding="utf-8") as f:
+    with open("句子_long_1.json", "r", encoding="utf-8") as f:
         sents_list = json.load(f)
 
     dict_sents_confuse, dict_sents_mistake = make_mistake_errors(sents_list)
-    save_results(dict_sents_confuse, "歧义句.json")
-    save_results(dict_sents_mistake, "病句.json")
+    save_results(dict_sents_confuse, "歧义句_long.json")
+    save_results(dict_sents_mistake, "病句_long.json") 
